@@ -1,0 +1,73 @@
+def wkly_rp():
+    import pandas as pd 
+    import numpy as np
+    def redd(path,sheetname):
+        a=pd.read_excel(path,sheet_name=sheetname)
+        return a
+    data=pd.DataFrame(columns=['姓名','部门','本周提问','上周未提问','累计未提问时间'])
+    path=str(input("输入统一目录："))
+    All,This_wk,Lst_wk=input("文件名--提问人名单、本周周报、上周周报：(空格分开)").split()
+    All=path+'/'+All
+    This_wk=path+'/'+This_wk
+    Lst_wk=path+'/'+Lst_wk
+    s=input("请输入部门代码（固收：1，资管:0):")
+    dep='固定收益部' if s=='1' else '华泰资管'
+    dep2='固定收益' if s=='1' else '华泰资管'
+    data['姓名']=redd(All,dep)['姓名']
+    if s=='0':       
+        data['部门']=redd(All,dep)['部门']
+    else:
+        data['部门']='固定收益部'
+        
+    #All2=redd(All,'华泰资管')
+    FE_a=redd(This_wk,dep2+'问题统计')
+    FE_na=redd(Lst_wk,dep2+'未提问')
+    #EM_a=redd(This_wk,'华泰资管问题统计')
+    #EM_na=redd(Lst_wk,'华泰资管未提问')
+    #生成数据集
+    FE_a=FE_a.dropna(axis=1,how='all') 
+    FE_a.columns=(['a','b','c'])
+    FE_na.columns=(['a','b','c'])
+    data['本周提问']=FE_a['a'][2:-3]
+    data['上周未提问']=FE_na[1:]['a']
+    data['累计未提问时间']=FE_na[1:]['c']
+    atw=list(data['本周提问'])
+    nlw=list(data['上周未提问'].dropna()[:-1])
+    time=list(data['累计未提问时间'].dropna())
+    appl=list(data['姓名'].dropna())
+    ntw=list(set(appl)-set(atw))#not this week
+    dic0=dict(zip(nlw,time))#not lask week and week num
+    dic1={}#new num
+    if s=='1':
+        lst=['韩玲','黄伟','张庆']
+    else:
+        lst=['蒋苑','冯志刚']
+    #无冯志刚老师的判断功能
+    
+    for i in ntw:#本周未提问
+        if i not in lst:
+            if i in nlw:#上周未提问
+                dic1[i]=int(dic0[i][:-1])+1
+            else:#上周提问
+                dic1[i]=1
+        else:
+            continue
+    dic1=dict(sorted(dic1.items(),key=lambda x:x[1],reverse=True))
+    result=pd.DataFrame(columns=['姓名','部门','累计未提问时间'])
+    depl=list(data['部门'].dropna())
+    dic_dep=dict(zip(appl,list(data['部门'].dropna())))
+    if s=='0':
+        for i in dic1.items():
+            result=result.append(pd.DataFrame({'姓名':[i[0]],'部门':[0],'累计未提问时间':[str(i[1])+'周']}))
+        for i in dic_dep.items():
+            result.loc[result['姓名']==i[0],'部门']=i[1]
+
+    else:
+        for i in dic1.items():
+                result=result.append(pd.DataFrame({'姓名':[i[0]],'部门':['固定收益部'],'累计未提问时间':[str(i[1])+'周']}))
+    fi=input('请输入要保存的路径名/文件名.xlsx:')
+    result.to_excel(fi)
+    
+wkly_rp()
+'''/Users/cokewithiceisnice/Desktop
+提问人名单.xlsx b.xlsx a.xlsx'''
